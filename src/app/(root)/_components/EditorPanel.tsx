@@ -1,29 +1,45 @@
 "use client";
-import { useCodeEditorStore } from "@/store/useCodeEditorStore";
+
+import * as monaco from "monaco-editor";
 import { useEffect, useState } from "react";
-import { defineMonacoThemes, LANGUAGE_CONFIG } from "../_constants";
 import { Editor } from "@monaco-editor/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { RotateCcwIcon, ShareIcon, TypeIcon } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
-import { EditorPanelSkeleton } from "./EditorPanelSkeleton";
+
+import { useCodeEditorStore } from "@/store/useCodeEditorStore";
 import useMounted from "@/hooks/useMounted";
+import { defineMonacoThemes, LANGUAGE_CONFIG } from "../_constants";
+import { EditorPanelSkeleton } from "./EditorPanelSkeleton";
 import ShareSnippetDialog from "./ShareSnippetDialog";
 
 function EditorPanel() {
   const clerk = useClerk();
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const { language, theme, fontSize, editor, setFontSize, setEditor } = useCodeEditorStore();
-
   const mounted = useMounted();
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
+  const {
+    language,
+    theme,
+    fontSize,
+    editor,
+    setEditor,
+    setFontSize,
+  } = useCodeEditorStore();
+
+  // Load saved code for the selected language
   useEffect(() => {
     const savedCode = localStorage.getItem(`editor-code-${language}`);
-    const newCode = savedCode || LANGUAGE_CONFIG[language].defaultCode;
-    if (editor) editor.setValue(newCode);
+    const defaultCode = LANGUAGE_CONFIG[language].defaultCode;
+    const value = savedCode || defaultCode;
+
+    if (editor) {
+      editor.setValue(value);
+    }
   }, [language, editor]);
 
+  // Load saved font size
   useEffect(() => {
     const savedFontSize = localStorage.getItem("editor-font-size");
     if (savedFontSize) setFontSize(parseInt(savedFontSize));
@@ -31,12 +47,16 @@ function EditorPanel() {
 
   const handleRefresh = () => {
     const defaultCode = LANGUAGE_CONFIG[language].defaultCode;
-    if (editor) editor.setValue(defaultCode);
+    if (editor) {
+      editor.setValue(defaultCode);
+    }
     localStorage.removeItem(`editor-code-${language}`);
   };
 
   const handleEditorChange = (value: string | undefined) => {
-    if (value) localStorage.setItem(`editor-code-${language}`, value);
+    if (value) {
+      localStorage.setItem(`editor-code-${language}`, value);
+    }
   };
 
   const handleFontSizeChange = (newSize: number) => {
@@ -54,15 +74,21 @@ function EditorPanel() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#1e1e2e] ring-1 ring-white/5">
-              <Image src={"/" + language + ".png"} alt="Logo" width={24} height={24} />
+              <Image
+                src={`/${language}.png`}
+                alt="Language Logo"
+                width={24}
+                height={24}
+              />
             </div>
             <div>
               <h2 className="text-sm font-medium text-white">Code Editor</h2>
               <p className="text-xs text-gray-500">Write and execute your code</p>
             </div>
           </div>
+
           <div className="flex items-center gap-3">
-            {/* Font Size Slider */}
+            {/* Font size slider */}
             <div className="flex items-center gap-3 px-3 py-2 bg-[#1e1e2e] rounded-lg ring-1 ring-white/5">
               <TypeIcon className="size-4 text-gray-400" />
               <div className="flex items-center gap-3">
@@ -80,6 +106,7 @@ function EditorPanel() {
               </div>
             </div>
 
+            {/* Reset button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -90,7 +117,7 @@ function EditorPanel() {
               <RotateCcwIcon className="size-4 text-gray-400" />
             </motion.button>
 
-            {/* Share Button */}
+            {/* Share button */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -99,12 +126,12 @@ function EditorPanel() {
                from-blue-500 to-blue-600 opacity-90 hover:opacity-100 transition-opacity"
             >
               <ShareIcon className="size-4 text-white" />
-              <span className="text-sm font-medium text-white ">Share</span>
+              <span className="text-sm font-medium text-white">Share</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Editor  */}
+        {/* Editor */}
         <div className="relative group rounded-xl overflow-hidden ring-1 ring-white/[0.05]">
           {clerk.loaded && (
             <Editor
@@ -113,7 +140,7 @@ function EditorPanel() {
               onChange={handleEditorChange}
               theme={theme}
               beforeMount={defineMonacoThemes}
-              onMount={(editor) => setEditor(editor)}
+              onMount={(editorInstance: monaco.editor.IStandaloneCodeEditor) => setEditor(editorInstance)}
               options={{
                 minimap: { enabled: false },
                 fontSize,
@@ -137,12 +164,13 @@ function EditorPanel() {
               }}
             />
           )}
-
           {!clerk.loaded && <EditorPanelSkeleton />}
         </div>
       </div>
+
       {isShareDialogOpen && <ShareSnippetDialog onClose={() => setIsShareDialogOpen(false)} />}
     </div>
   );
 }
+
 export default EditorPanel;
