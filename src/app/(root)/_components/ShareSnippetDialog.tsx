@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 function ShareSnippetDialog({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [isSharing, setIsSharing] = useState(false);
-  const { language, getCode } = useCodeEditorStore();
+  const { language, code } = useCodeEditorStore();
   const createSnippet = useMutation(api.snippets.createSnippet);
 
   const handleShare = async (e: React.FormEvent) => {
@@ -17,7 +17,7 @@ function ShareSnippetDialog({ onClose }: { onClose: () => void }) {
     setIsSharing(true);
 
     try {
-      const code = getCode();
+      const codeToShare = code;
       await createSnippet({ title, language, code });
       onClose();
       setTitle("");

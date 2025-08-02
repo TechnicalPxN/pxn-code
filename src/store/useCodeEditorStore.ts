@@ -1,37 +1,97 @@
 import { create } from "zustand";
-import { editor as MonacoEditor } from "monaco-editor";
 
-type CodeEditorStore = {
-  language: string;
+interface ExecutionResult {
   code: string;
-  output: string;
-  fontSize: number;
-  theme: string;
-  editor: MonacoEditor.IStandaloneCodeEditor | null;
-  setLanguage: (lang: string) => void;
-  setCode: (code: string) => void;
-  setOutput: (output: string) => void;
-  setFontSize: (size: number) => void;
+  output?: string;
+  error?: string;
+}
+
+interface CodeEditorStore {
+    theme: string;
   setTheme: (theme: string) => void;
-  setEditor: (editor: MonacoEditor.IStandaloneCodeEditor) => void;
-};
 
-export const useCodeEditorStore = create<CodeEditorStore>((set) => ({
-  language: "javascript",
+  fontSize: number;
+  setFontSize: (size: number) => void;
+
+  code: string;
+  setCode: (code: string) => void;
+
+  language: string;
+  setLanguage: (language: string) => void;
+
+  output: string;
+  setOutput: (output: string) => void;
+
+  error: string;
+  setError: (error: string) => void;
+
+  isRunning: boolean;
+  setIsRunning: (running: boolean) => void;
+
+  runCode: () => Promise<void>;
+
+  editor: any;
+  setEditor: (editorInstance: any) => void;
+
+  getExecutionResult: () => ExecutionResult | null;
+}
+
+export const useCodeEditorStore = create<CodeEditorStore>((set, get) => ({
   code: "",
-  output: "",
-  fontSize: 14,
-  theme: "vs-dark",
-  editor: null,
-  setLanguage: (lang) => set({ language: lang }),
   setCode: (code) => set({ code }),
-  setOutput: (output) => set({ output }),
-  setFontSize: (size) => set({ fontSize: size }),
-  setTheme: (theme) => set({ theme }),
-  setEditor: (editor) => set({ editor }),
-}));
 
-export const getExecutionResult = () => {
-  const { code, language } = useCodeEditorStore.getState();
-  return `Code: ${code}, Language: ${language}`;
-};
+    theme: "vs-dark",
+  setTheme: (theme) => set({ theme }),
+
+  fontSize: 14,
+  setFontSize: (size) => set({ fontSize: size }),
+
+  language: "javascript",
+  setLanguage: (language) => set({ language }),
+
+  output: "",
+  setOutput: (output) => set({ output }),
+
+  error: "",
+  setError: (error) => set({ error }),
+
+  isRunning: false,
+  setIsRunning: (running) => set({ isRunning: running }),
+
+  editor: null,
+  setEditor: (editorInstance) => set({ editor: editorInstance }),
+
+  runCode: async () => {
+    const { code, language, setIsRunning, setOutput, setError } = get();
+    setIsRunning(true);
+    setOutput("");
+    setError("");
+
+    try {
+      // Replace with real code execution API
+      const res = await fetch("/api/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, language }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        set({ output: data.output || "", error: data.error || "" });
+      } else {
+        set({ error: data.error || "Unknown error" });
+      }
+    } catch (err: any) {
+      set({ error: err.message || "Execution failed" });
+    } finally {
+      setIsRunning(false);
+    }
+  },
+
+  getExecutionResult: () => {
+    const { code, output, error } = get();
+    if (!code) return null;
+    return { code, output, error };
+  },
+}));

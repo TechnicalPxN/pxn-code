@@ -1,6 +1,6 @@
 "use client";
 
-import { getExecutionResult, useCodeEditorStore } from "@/store/useCodeEditorStore";
+import { useCodeEditorStore } from "@/store/useCodeEditorStore";
 import { useUser } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { motion } from "framer-motion";
@@ -14,7 +14,7 @@ function RunButton() {
 
   const handleRun = async () => {
     await runCode();
-    const result = getExecutionResult();
+    const result = useCodeEditorStore();
 
     if (user && result) {
       await saveExecution({
