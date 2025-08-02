@@ -1,4 +1,5 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { editor as MonacoEditor } from "monaco-editor";
 
 type CodeEditorStore = {
   language: string;
@@ -6,21 +7,21 @@ type CodeEditorStore = {
   output: string;
   fontSize: number;
   theme: string;
-  editor: any; // or a proper type like MonacoEditor if you have it
+  editor: MonacoEditor.IStandaloneCodeEditor | null;
   setLanguage: (lang: string) => void;
   setCode: (code: string) => void;
   setOutput: (output: string) => void;
   setFontSize: (size: number) => void;
   setTheme: (theme: string) => void;
-  setEditor: (editor: any) => void;
+  setEditor: (editor: MonacoEditor.IStandaloneCodeEditor) => void;
 };
 
 export const useCodeEditorStore = create<CodeEditorStore>((set) => ({
-  language: 'javascript',
-  code: '',
-  output: '',
+  language: "javascript",
+  code: "",
+  output: "",
   fontSize: 14,
-  theme: 'vs-dark',
+  theme: "vs-dark",
   editor: null,
   setLanguage: (lang) => set({ language: lang }),
   setCode: (code) => set({ code }),
